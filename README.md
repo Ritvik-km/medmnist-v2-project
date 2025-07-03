@@ -20,14 +20,5 @@ This project is focused on replicating and extending the MedMNIST v2 paper, whic
 
 ---
 
-## 📁 Project Structure
+<pre> ## 📁 Project Structure MedMNIST/ ├── scripts/ # Training, evaluation, plotting scripts ├── results/ # Logs and visualizations ├── models/ # Model definitions ├── data/ # Downloaded datasets (ignored by Git) ├── .gitignore ├── requirements.txt └── README.md </pre>
 
-MedMNIST/
-│
-├── scripts/ # Training, evaluation, plotting scripts
-├── results/ # Logs and visualizations
-├── models/ # Model definitions
-├── data/ # Downloaded datasets (ignored by Git)
-├── .gitignore
-├── requirements.txt
-└── README.md
