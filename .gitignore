@@ -1,0 +1,32 @@
+# This is a .gitignore file for the MedMNIST project
+venv/
+.env/
+*.env
+
+# Ignore model weights and large binaries
+*.pth
+*.pt
+
+# Ignore dataset cache
+__pycache__/
+*.npz
+*.npy
+data/
+.medmnist_cache/
+
+# Ignore all results by default
+results/*
+
+# Allow only key artifacts (curated outputs)
+!results/*.png
+!results/*.csv
+!results/final_*.txt
+
+# Ignore Jupyter checkpoints (if using notebooks)
+.ipynb_checkpoints/
+
+# Ignore logs or temp files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
