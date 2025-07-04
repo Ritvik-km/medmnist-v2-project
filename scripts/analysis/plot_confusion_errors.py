@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from torchvision import transforms
-# from medmnist.dataset import PathMNIST
 from mmxp.data.pathmnist_loader import _get_dataset 
 from torch.utils.data import DataLoader
 from torchvision import models
@@ -25,11 +24,6 @@ os.makedirs(plots_dir, exist_ok=True)
 
 model_path  = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
 
-# ---- Load Dataset ----
-# transform = transforms.Compose([
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[.5]*3, std=[.5]*3)
-# ])
 
 test_dataset = _get_dataset("test", download=True)  # same transform if you like
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)

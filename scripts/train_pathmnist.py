@@ -32,26 +32,8 @@ os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
 
-# Transforms (convert to 3 channels)
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),  # Convert 1 channel to 3
-    transforms.Normalize(mean=[.5]*3, std=[.5]*3)
-])
-
 # Load Data
 train_loader, val_loader, test_loader = get_loaders(batch_size=BATCH_SIZE)
-
-# info = INFO[DATA_FLAG]
-# DataClass = getattr(__import__('medmnist.dataset', fromlist=[info['python_class']]), info['python_class'])
-
-# train_dataset = DataClass(split='train', transform=transform, download=True)
-# val_dataset   = DataClass(split='val', transform=transform, download=True)
-# test_dataset  = DataClass(split='test', transform=transform, download=True)
-
-# train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-# val_loader   = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-# test_loader  = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # Model
 model = models.resnet18(weights=None)
