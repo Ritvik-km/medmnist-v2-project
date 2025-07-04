@@ -11,13 +11,21 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 from tqdm import tqdm
 import csv
 from mmxp.data.pathmnist_loader import get_loaders
+import argparse
+
+# --- CLI Arguments ---
+parser = argparse.ArgumentParser()
+parser.add_argument('--model', type=str, default="resnet18", choices=["resnet18", "mobilenetv1"])
+parser.add_argument('--width', type=float, default=1.0, help="Width multiplier (for MobileNetV1 only)")
+parser.add_argument('--lr', type=float, default=None, help="Learning rate override")
+args = parser.parse_args()
 
 
 # Configuration
 DATA_FLAG = 'pathmnist'
 NUM_EPOCHS = 10
 BATCH_SIZE = 128
-LEARNING_RATE = 1e-3
+LEARNING_RATE = args.lr if args.lr else 1e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 9
 
@@ -30,17 +38,24 @@ log_dir     = os.path.join(results_dir, "logs")
 os.makedirs(chkpt_dir, exist_ok=True)
 os.makedirs(log_dir, exist_ok=True)
 
-log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
-
 # Load Data
 train_loader, val_loader, test_loader = get_loaders(batch_size=BATCH_SIZE)
 
 # Model
-model = models.resnet18(weights=None)
-model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-model.maxpool = nn.Identity()  # Remove 7x7 maxpool layer for small inputs
-model.fc = nn.Linear(model.fc.in_features, NUM_CLASSES)
-model = model.to(DEVICE)
+if args.model == "resnet18":
+    from torchvision.models import resnet18
+    model = resnet18(weights=None)
+    model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    model.maxpool = nn.Identity()
+    model.fc = nn.Linear(model.fc.in_features, NUM_CLASSES)
+    model_name = "resnet18"
+else:
+    from mmxp.models.mobilenet_v1 import MobileNetV1
+    model = MobileNetV1(num_classes=NUM_CLASSES, width_mult=args.width)
+    model_name = f"mobilenetv1_w{args.width}_{args.lr}"
+
+# log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
+log_file = os.path.join(log_dir, f"pathmnist_{model_name}_log.csv")
 
 # Loss & Optimizer
 criterion = nn.CrossEntropyLoss()
@@ -110,7 +125,8 @@ for epoch in range(NUM_EPOCHS):
 
 
 # Save model
-model_path = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
+# model_path = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
+model_path = os.path.join(chkpt_dir, f"{model_name}_pathmnist.pth")
 torch.save(model.state_dict(), model_path)
 
 # Evaluation

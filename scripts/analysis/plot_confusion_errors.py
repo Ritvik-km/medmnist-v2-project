@@ -37,6 +37,9 @@ model.load_state_dict(torch.load(model_path, map_location=DEVICE))
 model.to(DEVICE)
 model.eval()
 
+# or 
+# model = MobileNetV1(num_classes=NUM_CLASSES, width_mult=1.0).to(DEVICE)
+
 # ---- Collect Predictions ----
 all_preds = []
 all_labels = []
