@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from torchvision import transforms
-from medmnist.dataset import PathMNIST
+# from medmnist.dataset import PathMNIST
+from mmxp.data.pathmnist_loader import _get_dataset 
 from torch.utils.data import DataLoader
 from torchvision import models
 import torch.nn as nn
@@ -14,17 +15,23 @@ import os
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 9
 BATCH_SIZE = 128
-base_dir = os.path.dirname(os.path.abspath(__file__))
-results_dir = os.path.join(base_dir, "..", "results")
-model_path = os.path.join(base_dir, "..", "models", "resnet18_pathmnist.pth")
+
+base_dir    = os.path.dirname(os.path.abspath(__file__))       # …/analysis
+repo_root   = os.path.abspath(os.path.join(base_dir, "..", ".."))
+results_dir = os.path.join(repo_root, "results")
+plots_dir   = os.path.join(results_dir, "plots")
+chkpt_dir   = os.path.join(results_dir, "checkpoints")
+os.makedirs(plots_dir, exist_ok=True)
+
+model_path  = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
 
 # ---- Load Dataset ----
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[.5]*3, std=[.5]*3)
-])
+# transform = transforms.Compose([
+#     transforms.ToTensor(),
+#     transforms.Normalize(mean=[.5]*3, std=[.5]*3)
+# ])
 
-test_dataset = PathMNIST(split='test', transform=transform, download=True)
+test_dataset = _get_dataset("test", download=True)  # same transform if you like
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # ---- Load Model ----
@@ -59,7 +66,7 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm)
 disp.plot(cmap='Blues', xticks_rotation=45)
 plt.title("Confusion Matrix - ResNet18 on PathMNIST")
 plt.tight_layout()
-save_path_cm = os.path.join(results_dir, "confusion_matrix_pathmnist.png")
+save_path_cm = os.path.join(plots_dir, "confusion_matrix_pathmnist.png")
 plt.savefig(save_path_cm, bbox_inches='tight')
 print(f"✅ Saved confusion matrix to {save_path_cm}")
 plt.show()
@@ -82,7 +89,7 @@ for i, idx in enumerate(mis_idx[:10]):
 
 plt.suptitle("Examples of Misclassified Images")
 plt.tight_layout()
-save_path_mis = os.path.join(results_dir, "misclassified_examples_pathmnist.png")
+save_path_mis = os.path.join(plots_dir, "misclassified_examples_pathmnist.png")
 plt.savefig(save_path_mis, bbox_inches='tight')
 print(f"✅ Saved misclassified examples to {save_path_mis}")
 plt.show()

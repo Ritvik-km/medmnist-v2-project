@@ -24,11 +24,13 @@ This project is focused on replicating and extending the MedMNIST v2 paper, whic
 
 ```
 MedMNIST/
-├── scripts/        # Training, evaluation, plotting scripts
-├── results/        # Logs and visualizations
-├── models/         # Model definitions
-├── data/           # Downloaded datasets (ignored by Git)
+├── data/              # Downloaded datasets (ignored by Git)
+├── notebooks/        
+├── results/           # Generated model weights, plots, logs
+├── scripts/           # Training, evaluation, plotting scripts
+├── src/mmxp/          # All modular code (models, loaders, metrics)
 ├── .gitignore
+├── pyproject.toml
 ├── requirements.txt
 └── README.md
 ```

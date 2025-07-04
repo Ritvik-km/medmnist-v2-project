@@ -2,11 +2,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-results_dir = os.path.join(base_dir, "..", "results")
+base_dir    = os.path.dirname(os.path.abspath(__file__))         # …/analysis
+repo_root   = os.path.abspath(os.path.join(base_dir, "..", ".."))
+log_path    = os.path.join(repo_root, "results", "logs", "pathmnist_resnet18_log.csv")
+
+plots_dir   = os.path.join(repo_root, "results", "plots")
+os.makedirs(plots_dir, exist_ok=True)
 
 # Load CSV
-log_path = '../results/pathmnist_resnet18_log.csv'
 df = pd.read_csv(log_path)
 
 # Plot
@@ -30,6 +33,6 @@ axs[2].set_ylabel('AUC')
 plt.suptitle("ResNet-18 on PathMNIST: Training Curves")
 plt.tight_layout()
 
-save_path = os.path.join(results_dir, "training_curves_pathmnist.png")
+save_path = os.path.join(plots_dir, "training_curves_pathmnist.png")
 plt.savefig(save_path, bbox_inches='tight')
 print(f"✅ Saved to {save_path}")

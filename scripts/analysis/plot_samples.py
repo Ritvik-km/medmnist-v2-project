@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from medmnist.dataset import PathMNIST
+# from medmnist.dataset import PathMNIST
+from mmxp.data.pathmnist_loader import _get_dataset
 import torchvision.transforms as transforms
 
 # Define transformation
@@ -8,7 +9,8 @@ transform = transforms.Compose([
 ])
 
 # Load dataset (no normalization to keep original appearance)
-dataset = PathMNIST(split='train', transform=transform, download=True)
+# dataset = PathMNIST(split='train', transform=transform, download=True)
+dataset = _get_dataset("train", download=True)
 
 # Track 1 image per class
 class_to_image = {}

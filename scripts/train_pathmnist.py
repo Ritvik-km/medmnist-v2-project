@@ -10,6 +10,8 @@ import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score
 from tqdm import tqdm
 import csv
+from mmxp.data.pathmnist_loader import get_loaders
+
 
 # Configuration
 DATA_FLAG = 'pathmnist'
@@ -18,13 +20,17 @@ BATCH_SIZE = 128
 LEARNING_RATE = 1e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 9
-# DATA_DIR = './data'
+
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-results_dir = os.path.join(base_dir, "..", "results")
-os.makedirs(results_dir, exist_ok=True)
-log_file = os.path.join(results_dir, 'pathmnist_resnet18_log.csv')
+results_dir = os.path.abspath(os.path.join(base_dir, "..", "results"))
+chkpt_dir   = os.path.join(results_dir, "checkpoints")
+log_dir     = os.path.join(results_dir, "logs")
 
+os.makedirs(chkpt_dir, exist_ok=True)
+os.makedirs(log_dir, exist_ok=True)
+
+log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
 
 # Transforms (convert to 3 channels)
 transform = transforms.Compose([
@@ -34,16 +40,18 @@ transform = transforms.Compose([
 ])
 
 # Load Data
-info = INFO[DATA_FLAG]
-DataClass = getattr(__import__('medmnist.dataset', fromlist=[info['python_class']]), info['python_class'])
+train_loader, val_loader, test_loader = get_loaders(batch_size=BATCH_SIZE)
 
-train_dataset = DataClass(split='train', transform=transform, download=True)
-val_dataset   = DataClass(split='val', transform=transform, download=True)
-test_dataset  = DataClass(split='test', transform=transform, download=True)
+# info = INFO[DATA_FLAG]
+# DataClass = getattr(__import__('medmnist.dataset', fromlist=[info['python_class']]), info['python_class'])
 
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_loader   = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-test_loader  = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+# train_dataset = DataClass(split='train', transform=transform, download=True)
+# val_dataset   = DataClass(split='val', transform=transform, download=True)
+# test_dataset  = DataClass(split='test', transform=transform, download=True)
+
+# train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+# val_loader   = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+# test_loader  = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 # Model
 model = models.resnet18(weights=None)
@@ -82,7 +90,7 @@ def evaluate(model, loader, split_name):
     with open(log_file, mode='a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['final', '', acc, auc])
-        
+
     return acc, auc
 
 # Initialize CSV log
@@ -120,7 +128,7 @@ for epoch in range(NUM_EPOCHS):
 
 
 # Save model
-model_path = os.path.join(results_dir, "resnet18_pathmnist.pth")
+model_path = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
 torch.save(model.state_dict(), model_path)
 
 # Evaluation
