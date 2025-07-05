@@ -52,7 +52,7 @@ if args.model == "resnet18":
 else:
     from mmxp.models.mobilenet_v1 import MobileNetV1
     model = MobileNetV1(num_classes=NUM_CLASSES, width_mult=args.width)
-    model_name = f"mobilenetv1_w{args.width}_{args.lr}"
+    model_name = f"mobilenetv1_w{args.width}_lr{args.lr}"
 
 # log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
 log_file = os.path.join(log_dir, f"pathmnist_{model_name}_log.csv")
