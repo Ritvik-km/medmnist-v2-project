@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from mmxp.data.pathmnist_loader import _get_dataset
+from mmxp.data.loader import _get_dataset
 import torchvision.transforms as transforms
 
 # Define transformation

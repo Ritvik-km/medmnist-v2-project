@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from torchvision import transforms
-from mmxp.data.pathmnist_loader import _get_dataset 
+from mmxp.data.loader import _get_dataset 
 from torch.utils.data import DataLoader
 from torchvision import models
 import torch.nn as nn

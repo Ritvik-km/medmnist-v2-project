@@ -18,9 +18,9 @@ models_info = {
         "num_classes": 9
     },
     "MobileNetV1": {
-        "log": os.path.join(log_dir, "pathmnist_mobilev1_log.csv"),
-        "ckpt": os.path.join(chkpt_dir, "mobilev1_pathmnist.pth"),
-        "build_fn": lambda: MobileNetV1(num_classes=9),
+        "log": os.path.join(log_dir, "pathmnist_mobilenetv1_w0.5_lr0.001_log.csv"),
+        "ckpt": os.path.join(chkpt_dir, "mobilenetv1_w0.5_lr0.001.pth"),
+        "build_fn": lambda: MobileNetV1(num_classes=9, width_mult=0.5),
         "num_classes": 9
     }
 }

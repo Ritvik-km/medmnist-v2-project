@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score
 from tqdm import tqdm
 import csv
-from mmxp.data.pathmnist_loader import get_loaders
+from mmxp.data.loader import get_loaders
 import argparse
 
 # --- CLI Arguments ---
