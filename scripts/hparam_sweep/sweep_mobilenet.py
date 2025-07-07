@@ -10,7 +10,7 @@ for width, lr in product(widths, lrs):
     print(f"\n🚀 Training MobileNetV1 with width={width}, lr={lr}")
     
     command = [
-        "python", "scripts/train_pathmnist.py",
+        "python", "scripts/train.py",
         "--model", "mobilenetv1",
         "--width", str(width),
         "--lr", str(lr)
