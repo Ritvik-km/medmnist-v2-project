@@ -39,7 +39,7 @@ dist/
 
 # ========= PROJECT STRUCTURE =========
 # Ignore MedMNIST data + cache
-data/
+/data/
 .medmnist_cache/
 *.npz
 *.npy

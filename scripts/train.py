@@ -18,11 +18,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default="resnet18", choices=["resnet18", "mobilenetv1"])
 parser.add_argument('--width', type=float, default=1.0, help="Width multiplier (for MobileNetV1 only)")
 parser.add_argument('--lr', type=float, default=None, help="Learning rate override")
+parser.add_argument('--dataset', type=str, default="pathmnist",
+                    choices=["pathmnist", "chestmnist", "dermamnist", "bloodmnist", "organcmnist", "organamnist", "organsmnist", "retinamnist", "breastmnist", "pneumoniamnist", "tissuemnist", "octmnist"], help="2D MedMNIST dataset flag")
 args = parser.parse_args()
 
 
 # Configuration
-DATA_FLAG = 'pathmnist'
+DATA_FLAG = args.dataset
 NUM_EPOCHS = 10
 BATCH_SIZE = 128
 LEARNING_RATE = args.lr if args.lr else 1e-3
@@ -39,7 +41,7 @@ os.makedirs(chkpt_dir, exist_ok=True)
 os.makedirs(log_dir, exist_ok=True)
 
 # Load Data
-train_loader, val_loader, test_loader = get_loaders(batch_size=BATCH_SIZE)
+train_loader, val_loader, test_loader = get_loaders(dataset_flag = DATA_FLAG, batch_size=BATCH_SIZE)
 
 # Model
 if args.model == "resnet18":
@@ -55,7 +57,7 @@ else:
     model_name = f"mobilenetv1_w{args.width}_lr{args.lr}"
 
 # log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
-log_file = os.path.join(log_dir, f"pathmnist_{model_name}_log.csv")
+log_file = os.path.join(log_dir, f"{DATA_FLAG}_{model_name}_log.csv")
 
 # Loss & Optimizer
 criterion = nn.CrossEntropyLoss()
@@ -126,7 +128,7 @@ for epoch in range(NUM_EPOCHS):
 
 # Save model
 # model_path = os.path.join(chkpt_dir, "resnet18_pathmnist.pth")
-model_path = os.path.join(chkpt_dir, f"{model_name}_pathmnist.pth")
+model_path = os.path.join(chkpt_dir, f"{model_name}_{DATA_FLAG}.pth")
 torch.save(model.state_dict(), model_path)
 
 # Evaluation
