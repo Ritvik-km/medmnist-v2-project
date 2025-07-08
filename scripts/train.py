@@ -31,6 +31,8 @@ LEARNING_RATE = args.lr if args.lr else 1e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 9
 
+info = INFO[DATA_FLAG]
+task = info['task'] 
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 results_dir = os.path.abspath(os.path.join(base_dir, "..", "results"))
@@ -60,7 +62,10 @@ else:
 log_file = os.path.join(log_dir, f"{DATA_FLAG}_{model_name}_log.csv")
 
 # Loss & Optimizer
-criterion = nn.CrossEntropyLoss()
+if task == "multi-label":
+    criterion = nn.BCEWithLogitsLoss()
+else:
+    criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 def evaluate(model, loader, split_name):
@@ -70,20 +75,37 @@ def evaluate(model, loader, split_name):
     with torch.no_grad():
         for images, labels in loader:
             images = images.to(DEVICE)
-            outputs = model(images)
-            probs = torch.softmax(outputs, dim=1)
-            preds = torch.argmax(probs, dim=1)
+            labels = labels.to(DEVICE)
 
-            all_labels.extend(labels.squeeze().cpu().numpy())
-            all_probs.extend(probs.cpu().numpy())
-            all_preds.extend(preds.cpu().numpy())
+            outputs = model(images)
+
+            if task == "multi-label":
+                probs = torch.sigmoid(outputs)
+                preds = (probs > 0.5).int()
+                all_labels.extend(labels.cpu().numpy())
+                all_probs.extend(probs.cpu().numpy())
+                all_preds.extend(preds.cpu().numpy())
+            else:
+                probs = torch.softmax(outputs, dim=1)
+                preds = torch.argmax(probs, dim=1)
+                all_labels.extend(labels.squeeze().cpu().numpy())
+                all_probs.extend(probs.cpu().numpy())
+                all_preds.extend(preds.cpu().numpy())
 
     all_labels = np.array(all_labels)
-    all_preds = np.array(all_preds)
     all_probs = np.array(all_probs)
+    all_preds = np.array(all_preds)
 
-    acc = accuracy_score(all_labels, all_preds)
-    auc = roc_auc_score(all_labels, all_probs, multi_class='ovr')
+    # Metrics
+    if task == "multi-label":
+        acc = np.mean((all_preds == all_labels).all(axis=1))  # exact match ratio
+        auc = roc_auc_score(all_labels, all_probs, average="macro")
+    elif task == "binary":
+        acc = accuracy_score(all_labels, all_preds)
+        auc = roc_auc_score(all_labels, all_probs[:, 1])
+    else:  # multi-class
+        acc = accuracy_score(all_labels, all_preds)
+        auc = roc_auc_score(all_labels, all_probs, multi_class="ovr")
 
     print(f"{split_name} Accuracy: {acc:.4f}, AUC: {auc:.4f}")
     with open(log_file, mode='a', newline='') as f:
@@ -91,6 +113,7 @@ def evaluate(model, loader, split_name):
         writer.writerow(['final', '', acc, auc])
 
     return acc, auc
+
 
 # Initialize CSV log
 with open(log_file, mode='w', newline='') as f:
@@ -103,7 +126,12 @@ for epoch in range(NUM_EPOCHS):
     model.train()
     total_loss = 0
     for images, labels in tqdm(train_loader):
-        images, labels = images.to(DEVICE), labels.squeeze().long().to(DEVICE)
+        images = images.to(DEVICE)
+        if task == "multi-label":
+            labels = labels.float().to(DEVICE)  # float for BCEWithLogits
+        else:
+            labels = labels.squeeze().long().to(DEVICE)  # long for CrossEntropy
+
 
         optimizer.zero_grad()
         outputs = model(images)
