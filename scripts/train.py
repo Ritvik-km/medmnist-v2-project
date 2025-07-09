@@ -34,6 +34,9 @@ NUM_CLASSES = 9
 info = INFO[DATA_FLAG]
 task = info['task'] 
 
+is_multilabel = "multi-label" in task
+is_binary     = ("binary"     in task) and not is_multilabel   # true for e.g. PneumoniaMNIST
+
 base_dir = os.path.dirname(os.path.abspath(__file__))
 results_dir = os.path.abspath(os.path.join(base_dir, "..", "results"))
 chkpt_dir   = os.path.join(results_dir, "checkpoints")
@@ -62,10 +65,13 @@ else:
 log_file = os.path.join(log_dir, f"{DATA_FLAG}_{model_name}_log.csv")
 
 # Loss & Optimizer
-if task == "multi-label":
+if is_multilabel:
     criterion = nn.BCEWithLogitsLoss()
-else:
+elif is_binary:
+    criterion = nn.BCEWithLogitsLoss()          # 1-logit or 2-logit is fine
+else:                                           # multi-class
     criterion = nn.CrossEntropyLoss()
+
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 def evaluate(model, loader, split_name):
@@ -97,15 +103,29 @@ def evaluate(model, loader, split_name):
     all_preds = np.array(all_preds)
 
     # Metrics
-    if task == "multi-label":
-        acc = np.mean((all_preds == all_labels).all(axis=1))  # exact match ratio
-        auc = roc_auc_score(all_labels, all_probs, average="macro")
-    elif task == "binary":
-        acc = accuracy_score(all_labels, all_preds)
-        auc = roc_auc_score(all_labels, all_probs[:, 1])
+    if is_multilabel:
+        probs = torch.sigmoid(outputs)          # [B, C]
+        preds = (probs > 0.5).int()
+        acc  = (preds.cpu() == labels.cpu()).all(1).float().mean().item()
+        auc  = roc_auc_score(labels.cpu().numpy(),
+                            probs.cpu().numpy(),
+                            average="macro")
+
+    elif is_binary:
+        probs = torch.sigmoid(outputs).squeeze()        # [B]
+        preds = (probs > 0.5).int()
+        acc  = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
+        auc  = roc_auc_score(labels.cpu().numpy(),
+                            probs.cpu().numpy())
+
     else:  # multi-class
-        acc = accuracy_score(all_labels, all_preds)
-        auc = roc_auc_score(all_labels, all_probs, multi_class="ovr")
+        probs = torch.softmax(outputs, dim=1)
+        preds = torch.argmax(probs, dim=1)
+        acc  = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
+        auc  = roc_auc_score(labels.cpu().numpy(),
+                            probs.cpu().numpy(),
+                            multi_class="ovr")
+
 
     print(f"{split_name} Accuracy: {acc:.4f}, AUC: {auc:.4f}")
     with open(log_file, mode='a', newline='') as f:
@@ -127,10 +147,15 @@ for epoch in range(NUM_EPOCHS):
     total_loss = 0
     for images, labels in tqdm(train_loader):
         images = images.to(DEVICE)
-        if task == "multi-label":
-            labels = labels.float().to(DEVICE)  # float for BCEWithLogits
-        else:
-            labels = labels.squeeze().long().to(DEVICE)  # long for CrossEntropy
+        if is_multilabel:                # shape [B, C] – float
+            labels = labels.float().to(DEVICE)
+
+        elif is_binary:                  # shape [B] – float
+            labels = labels.view(-1).float().to(DEVICE)
+
+        else:                            # multi-class indices – long
+            labels = labels.squeeze().long().to(DEVICE)
+
 
 
         optimizer.zero_grad()
