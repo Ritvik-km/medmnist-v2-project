@@ -85,47 +85,48 @@ def evaluate(model, loader, split_name):
 
             outputs = model(images)
 
-            if task == "multi-label":
-                probs = torch.sigmoid(outputs)
+            if is_multilabel:
+                probs = torch.sigmoid(outputs)          # [B, C]
                 preds = (probs > 0.5).int()
+                
+                # Collect predictions and labels
                 all_labels.extend(labels.cpu().numpy())
                 all_probs.extend(probs.cpu().numpy())
                 all_preds.extend(preds.cpu().numpy())
-            else:
+            
+            elif is_binary:
+                probs = torch.sigmoid(outputs).squeeze()        # [B]
+                preds = (probs > 0.5).int()
+                
+                # Collect predictions and labels
+                all_labels.extend(labels.view(-1).cpu().numpy())
+                all_probs.extend(probs.cpu().numpy())
+                all_preds.extend(preds.cpu().numpy())
+            
+            else:  # multi-class
                 probs = torch.softmax(outputs, dim=1)
                 preds = torch.argmax(probs, dim=1)
+                
+                # Collect predictions and labels
                 all_labels.extend(labels.squeeze().cpu().numpy())
                 all_probs.extend(probs.cpu().numpy())
                 all_preds.extend(preds.cpu().numpy())
 
+    # Convert to numpy arrays
     all_labels = np.array(all_labels)
     all_probs = np.array(all_probs)
     all_preds = np.array(all_preds)
 
-    # Metrics
+    # Compute metrics on all collected data
     if is_multilabel:
-        probs = torch.sigmoid(outputs)          # [B, C]
-        preds = (probs > 0.5).int()
-        acc  = (preds.cpu() == labels.cpu()).all(1).float().mean().item()
-        auc  = roc_auc_score(labels.cpu().numpy(),
-                            probs.cpu().numpy(),
-                            average="macro")
-
+        acc = np.mean((all_preds == all_labels).all(axis=1))  # exact match ratio
+        auc = roc_auc_score(all_labels, all_probs, average="macro")
     elif is_binary:
-        probs = torch.sigmoid(outputs).squeeze()        # [B]
-        preds = (probs > 0.5).int()
-        acc  = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
-        auc  = roc_auc_score(labels.cpu().numpy(),
-                            probs.cpu().numpy())
-
+        acc = accuracy_score(all_labels, all_preds)
+        auc = roc_auc_score(all_labels, all_probs)
     else:  # multi-class
-        probs = torch.softmax(outputs, dim=1)
-        preds = torch.argmax(probs, dim=1)
-        acc  = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
-        auc  = roc_auc_score(labels.cpu().numpy(),
-                            probs.cpu().numpy(),
-                            multi_class="ovr")
-
+        acc = accuracy_score(all_labels, all_preds)
+        auc = roc_auc_score(all_labels, all_probs, multi_class="ovr")
 
     print(f"{split_name} Accuracy: {acc:.4f}, AUC: {auc:.4f}")
     with open(log_file, mode='a', newline='') as f:
