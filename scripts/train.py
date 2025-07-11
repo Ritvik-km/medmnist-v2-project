@@ -34,6 +34,10 @@ NUM_CLASSES = 9
 info = INFO[DATA_FLAG]
 task = info['task'] 
 
+n_channels = info['n_channels']
+n_classes = len(info['label'])
+NUM_CLASSES = n_classes
+
 is_multilabel = "multi-label" in task
 is_binary     = ("binary"     in task) and not is_multilabel   # true for e.g. PneumoniaMNIST
 
@@ -58,7 +62,7 @@ if args.model == "resnet18":
     model_name = "resnet18"
 else:
     from mmxp.models.mobilenet_v1 import MobileNetV1
-    model = MobileNetV1(num_classes=NUM_CLASSES, width_mult=args.width)
+    model = MobileNetV1(num_classes=NUM_CLASSES, input_channels=n_channels, width_mult=args.width)
     model_name = f"mobilenetv1_w{args.width}_lr{args.lr}"
 
 # log_file = os.path.join(log_dir, "pathmnist_resnet18_log.csv")
@@ -73,6 +77,7 @@ else:                                           # multi-class
     criterion = nn.CrossEntropyLoss()
 
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+model = model.to(DEVICE)
 
 def evaluate(model, loader, split_name):
     model.eval()
@@ -146,18 +151,31 @@ print("Starting training...")
 for epoch in range(NUM_EPOCHS):
     model.train()
     total_loss = 0
-    for images, labels in tqdm(train_loader):
+    for batch_idx, (images, labels) in enumerate(tqdm(train_loader)):
+        if images.size(0) != labels.size(0):
+            print(f"⚠️ Batch {batch_idx}: size mismatch - images={images.size(0)}, labels={labels.size(0)}")
+            continue  # Skip this problematic batch
+            
+        if images.size(0) == 0 or labels.size(0) == 0:
+            print(f"⚠️ Batch {batch_idx}: empty batch - images={images.size(0)}, labels={labels.size(0)}")
+            continue  # Skip empty batches
+            
         images = images.to(DEVICE)
-        if is_multilabel:                # shape [B, C] – float
+        if is_multilabel:
             labels = labels.float().to(DEVICE)
-
-        elif is_binary:                  # shape [B] – float
+        elif is_binary:
             labels = labels.view(-1).float().to(DEVICE)
+        else:
+            if labels.dim() > 1:
+                labels = labels.squeeze().long().to(DEVICE)
+            else:
+                labels = labels.long().to(DEVICE)
+            if labels.dim() == 0:
+                labels = labels.unsqueeze(0)
 
-        else:                            # multi-class indices – long
-            labels = labels.squeeze().long().to(DEVICE)
-
-
+        if images.size(0) != labels.size(0):
+            print(f"⚠️ Batch {batch_idx}: post-processing size mismatch - images={images.shape}, labels={labels.shape}")
+            continue
 
         optimizer.zero_grad()
         outputs = model(images)
